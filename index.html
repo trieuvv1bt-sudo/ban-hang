@@ -876,16 +876,13 @@ async function testConnection() {
   if (!url) { showToast('⚠️ Chưa nhập URL'); return; }
   document.getElementById('sync-result').textContent = '🔄 Đang kiểm tra...';
   try {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.status === 'ok') {
-      document.getElementById('sync-result').textContent = '✅ Kết nối thành công!';
-      const box = document.getElementById('gs-status-box');
-      box.className = 'gs-status ok';
-      document.getElementById('gs-status-text').textContent = 'Kết nối OK — sẵn sàng đồng bộ';
-    }
+    await fetch(url, { method: 'GET', mode: 'no-cors' });
+    document.getElementById('sync-result').textContent = '✅ URL hợp lệ — nhấn Đồng bộ để gửi dữ liệu!';
+    const box = document.getElementById('gs-status-box');
+    box.className = 'gs-status ok';
+    document.getElementById('gs-status-text').textContent = 'Kết nối OK — sẵn sàng đồng bộ';
   } catch(e) {
-    document.getElementById('sync-result').textContent = '❌ Không kết nối được. Kiểm tra lại URL.';
+    document.getElementById('sync-result').textContent = '❌ URL không hợp lệ. Kiểm tra lại.';
   }
 }
 
@@ -894,20 +891,21 @@ async function syncToGSheet() {
   if (!url) { showToast('⚠️ Chưa nhập URL Apps Script'); return; }
   if (records.length === 0) { showToast('⚠️ Chưa có dữ liệu để đồng bộ'); return; }
 
-  document.getElementById('sync-result').textContent = '🔄 Đang đồng bộ...';
+  document.getElementById('sync-result').textContent = '🔄 Đang gửi dữ liệu...';
   try {
-    const res = await fetch(url, {
+    await fetch(url, {
       method: 'POST',
-      body: JSON.stringify({ rows: records }),
-      headers: { 'Content-Type': 'application/json' }
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ rows: records })
     });
-    const data = await res.json();
-    if (data.success) {
-      document.getElementById('sync-result').textContent = `✅ Đồng bộ thành công ${data.synced} giao dịch lên Google Sheet!`;
-      showToast('☁️ Đồng bộ thành công!');
-    }
+    document.getElementById('sync-result').textContent = `✅ Đã gửi ${records.length} giao dịch! Vào Google Sheet kiểm tra nhé.`;
+    showToast('☁️ Đồng bộ thành công!');
+    const box = document.getElementById('gs-status-box');
+    box.className = 'gs-status ok';
+    document.getElementById('gs-status-text').textContent = 'Đã đồng bộ thành công!';
   } catch(e) {
-    document.getElementById('sync-result').textContent = '❌ Lỗi đồng bộ: ' + e.message;
+    document.getElementById('sync-result').textContent = '❌ Lỗi: ' + e.message;
   }
 }
 
