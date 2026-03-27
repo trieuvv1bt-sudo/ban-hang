@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bảng Kê Bán Hàng</title>
+<style>
+  :root {
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #085041;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --red: #E24B4A;
+    --red-light: #FCEBEB;
+    --gray: #888780;
+    --gray-light: #F1EFE8;
+    --text: #2C2C2A;
+    --text-muted: #5F5E5A;
+    --border: rgba(0,0,0,0.12);
+    --bg: #ffffff;
+    --bg-surface: #F9F8F4;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg-surface);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* Header */
+  .header {
+    background: var(--green-dark);
+    color: white;
+    padding: 16px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header h1 { font-size: 17px; font-weight: 600; letter-spacing: 0.2px; }
+  .header p { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 62px;
+    z-index: 99;
+  }
+  .tab {
+    flex: 1;
+    padding: 12px 0;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+  /* Content areas */
+  .panel { display: none; padding: 16px; }
+  .panel.active { display: block; }
+
+  /* Loại toggle */
+  .loai-toggle { display: flex; gap: 0; margin-bottom: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  .loai-btn {
+    flex: 1; padding: 10px; border: none; font-size: 14px; font-weight: 600;
+    cursor: pointer; background: var(--bg); color: var(--text-muted); transition: all 0.2s;
+  }
+  .loai-btn.active-mua { background: #E6F1FB; color: #0C447C; }
+  .loai-btn.active-ban { background: var(--green-light); color: var(--green-dark); }
+
+  /* Form */
+  .form-card {
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .form-card h2 { font-size: 14px; font-weight: 600; color: var(--green-dark); margin-bottom: 14px; }
+  .form-row { margin-bottom: 12px; }
+  .form-row label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border 0.2s;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.1);
+  }
+  .form-row textarea { resize: none; height: 70px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Auto-calc doanh thu */
+  .auto-calc {
+    background: var(--green-light);
+    border: 1px solid rgba(29,158,117,0.3);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--green-dark);
+    font-weight: 600;
+  }
+  .auto-calc small { font-size: 11px; font-weight: 400; opacity: 0.8; display: block; margin-bottom: 2px; }
+
+  /* Buttons */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-primary:active { transform: scale(0.98); background: var(--green-dark); }
+  .btn-secondary { background: var(--bg); color: var(--green); border: 1px solid var(--green); margin-top: 8px; }
+  .btn-danger { background: var(--red-light); color: var(--red); margin-top: 8px; }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+
+  /* Metric cards */
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .metric {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  .metric small { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .metric strong { font-size: 18px; font-weight: 600; color: var(--green-dark); }
+  .metric.danger strong { color: var(--red); }
+  .metric.warn strong { color: var(--amber); }
+
+  /* Data table */
+  .list-item {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .list-item .row-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .list-item .date-badge {
+    font-size: 11px;
+    background: var(--gray-light);
+    color: var(--text-muted);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .list-item .stt { font-size: 11px; color: var(--text-muted); }
+  .list-item .noidung { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .list-item .details { display: flex; gap: 8px; flex-wrap: wrap; }
+  .list-item .tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .tag-sl { background: #E6F1FB; color: #0C447C; }
+  .tag-dt { background: var(--green-light); color: var(--green-dark); }
+  .tag-cp { background: var(--red-light); color: #A32D2D; }
+  .tag-loi { background: var(--amber-light); color: #633806; }
+  .del-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: var(--red-light);
+    color: var(--red);
+    border: none;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  /* Google Sheet panel */
+  .gs-card {
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .gs-card h2 { font-size: 14px; font-weight: 600; color: var(--green-dark); margin-bottom: 12px; }
+  .gs-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .gs-status.ok { background: var(--green-light); color: var(--green-dark); }
+  .gs-status.err { background: var(--red-light); color: #A32D2D; }
+  .gs-status.warn { background: var(--amber-light); color: #633806; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+  .step { display: flex; gap: 10px; margin-bottom: 12px; }
+  .step-num {
+    width: 24px; height: 24px;
+    background: var(--green);
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step-content { flex: 1; }
+  .step-content strong { font-size: 13px; display: block; margin-bottom: 3px; }
+  .step-content p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .step-content code {
+    background: var(--gray-light);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--text);
+    word-break: break-all;
+  }
+  .copy-btn {
+    background: var(--gray-light);
+    color: var(--text);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #2C2C2A;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .empty div { font-size: 32px; margin-bottom: 8px; }
+
+  /* Script textarea */
+  .script-box {
+    background: #F1EFE8;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--text);
+    width: 100%;
+    height: 120px;
+    resize: none;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 Bảng Kê Bán Hàng</h1>
+  <p id="header-date">Đang tải...</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('nhap')">➕ Nhập liệu</button>
+  <button class="tab" onclick="switchTab('danh-sach')">📋 Danh sách</button>
+  <button class="tab" onclick="switchTab('gsheet')">☁️ Google Sheet</button>
+</div>
+
+<!-- TAB 1: NHẬP LIỆU -->
+<div id="tab-nhap" class="panel active">
+  <div class="form-card">
+    <h2>Thông tin giao dịch</h2>
+
+    <div class="form-row">
+      <label>Ngày tháng</label>
+      <input type="date" id="f-ngay">
+    </div>
+    <div class="form-row">
+      <label>Loại giao dịch</label>
+      <div class="loai-toggle">
+        <button class="loai-btn active-ban" id="btn-ban" onclick="setLoai('Bán')">🟢 Bán</button>
+        <button class="loai-btn" id="btn-mua" onclick="setLoai('Mua')">🔵 Mua</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Nội dung / Mặt hàng</label>
+      <input type="text" id="f-noidung" placeholder="VD: Gạo, thịt heo, rau củ...">
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Số lượng (kg)</label>
+        <input type="number" id="f-soluong" placeholder="0" inputmode="decimal" oninput="calcDT()">
+      </div>
+      <div class="form-row">
+        <label>Đơn giá (đ)</label>
+        <input type="number" id="f-dongia" placeholder="0" inputmode="numeric" oninput="calcDT()">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>Doanh thu</label>
+      <div class="auto-calc" id="dt-display">
+        <small>= Số lượng × Đơn giá (tự động)</small>
+        <span id="dt-value">0 ₫</span>
+      </div>
+      <div style="margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;text-transform:none;">
+          <input type="checkbox" id="dt-override" onchange="toggleDTOverride()">
+          Nhập tay doanh thu
+        </label>
+      </div>
+      <input type="number" id="f-doanhthu" placeholder="Nhập doanh thu..." inputmode="numeric"
+        style="display:none;margin-top:6px;">
+    </div>
+
+    <div class="form-row">
+      <label>Chi phí (đ)</label>
+      <input type="number" id="f-chiphi" placeholder="0" inputmode="numeric">
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="saveRecord()">💾 Lưu giao dịch</button>
+</div>
+
+<!-- TAB 2: DANH SÁCH -->
+<div id="tab-danh-sach" class="panel">
+  <div class="metrics">
+    <div class="metric">
+      <small>Tổng doanh thu</small>
+      <strong id="sum-dt">0 ₫</strong>
+    </div>
+    <div class="metric danger">
+      <small>Tổng chi phí</small>
+      <strong id="sum-cp">0 ₫</strong>
+    </div>
+    <div class="metric warn">
+      <small>Lợi nhuận</small>
+      <strong id="sum-ln">0 ₫</strong>
+    </div>
+    <div class="metric">
+      <small>Số giao dịch</small>
+      <strong id="sum-count">0</strong>
+    </div>
+  </div>
+  <div id="list-container"></div>
+</div>
+
+<!-- TAB 3: GOOGLE SHEET -->
+<div id="tab-gsheet" class="panel">
+  <div class="gs-card">
+    <h2>Trạng thái kết nối</h2>
+    <div class="gs-status warn" id="gs-status-box">
+      <div class="dot"></div>
+      <span id="gs-status-text">Chưa cấu hình URL Google Apps Script</span>
+    </div>
+    <div class="form-row">
+      <label>URL Google Apps Script (Web App)</label>
+      <input type="url" id="gs-url" placeholder="https://script.google.com/macros/s/..." oninput="saveGSUrl()">
+    </div>
+    <button class="btn btn-primary" onclick="syncToGSheet()">☁️ Đồng bộ lên Google Sheet</button>
+    <button class="btn btn-secondary" onclick="testConnection()">🔗 Kiểm tra kết nối</button>
+    <div id="sync-result" style="margin-top:10px;font-size:13px;color:var(--text-muted);"></div>
+  </div>
+
+  <div class="gs-card">
+    <h2>📖 Hướng dẫn cài đặt</h2>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>Tạo Google Sheet mới</strong>
+        <p>Vào <strong>sheets.google.com</strong> → tạo file mới → đặt tên "Bảng Kê Bán Hàng"</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>Mở Apps Script</strong>
+        <p>Trong Google Sheet: <strong>Tiện ích mở rộng → Apps Script</strong></p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>Dán code sau vào Apps Script</strong>
+        <textarea class="script-box" id="apps-script-code" readonly></textarea>
+        <button class="copy-btn" onclick="copyScript()">📋 Sao chép code</button>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong>Triển khai Web App</strong>
+        <p>Nhấn <strong>Triển khai → Web app mới</strong> → Ai có thể truy cập: <strong>Mọi người</strong> → Sao chép URL → Dán vào ô phía trên</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'banhang_records_v2';
+const GSURL_KEY = 'banhang_gsurl';
+
+const APPS_SCRIPT = `// ===== HÀM CHÍNH NHẬN DỮ LIỆU =====
+function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var data = JSON.parse(e.postData.contents);
+  var rows = data.rows;
+
+  writeRawData(ss, rows);
+  writeThuChi(ss, rows);
+  writeTonKho(ss, rows);
+  writeTongHopThang(ss, rows);
+  writeTongHopNgay(ss, rows);
+
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true, synced: rows.length
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({status:"ok"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ===== TIỆN ÍCH =====
+function getOrCreate(ss, name) {
+  return ss.getSheetByName(name) || ss.insertSheet(name);
+}
+function clearSheet(sheet) {
+  sheet.clearContents();
+  sheet.clearFormats();
+}
+function header(sheet, cols, bg) {
+  var r = sheet.getRange(1, 1, 1, cols.length);
+  r.setValues([cols]);
+  r.setBackground(bg || "#085041");
+  r.setFontColor("white");
+  r.setFontWeight("bold");
+  r.setHorizontalAlignment("center");
+}
+function moneyFmt(sheet, row, col, numCols) {
+  sheet.getRange(row, col, numRows(sheet, row), numCols).setNumberFormat("#,##0");
+}
+function numRows(sheet, fromRow) {
+  var last = sheet.getLastRow();
+  return last >= fromRow ? last - fromRow + 1 : 0;
+}
+function fmtMoney(sheet, startRow, cols) {
+  var last = sheet.getLastRow();
+  if (last < startRow) return;
+  cols.forEach(function(c) {
+    sheet.getRange(startRow, c, last - startRow + 1, 1).setNumberFormat("#,##0");
+  });
+}
+function fmtKg(sheet, startRow, cols) {
+  var last = sheet.getLastRow();
+  if (last < startRow) return;
+  cols.forEach(function(c) {
+    sheet.getRange(startRow, c, last - startRow + 1, 1).setNumberFormat("#,##0.##");
+  });
+}
+function autoWidth(sheet, numCols) {
+  for (var i = 1; i <= numCols; i++) sheet.autoResizeColumn(i);
+}
+function altRows(sheet, startRow, numCols, color) {
+  var last = sheet.getLastRow();
+  for (var r = startRow; r <= last; r += 2) {
+    sheet.getRange(r, 1, 1, numCols).setBackground(color || "#F1F8F5");
+  }
+}
+function totalRow(sheet, label, colDefs, numCols) {
+  var last = sheet.getLastRow();
+  var rowData = [];
+  for (var c = 1; c <= numCols; c++) rowData.push("");
+  rowData[0] = label;
+  colDefs.forEach(function(def) {
+    rowData[def.col - 1] = "=SUM(" + columnLetter(def.col) + "2:" + columnLetter(def.col) + last + ")";
+  });
+  sheet.appendRow(rowData);
+  var totalRange = sheet.getRange(sheet.getLastRow(), 1, 1, numCols);
+  totalRange.setBackground("#085041");
+  totalRange.setFontColor("white");
+  totalRange.setFontWeight("bold");
+}
+function columnLetter(col) {
+  var s = "";
+  while (col > 0) {
+    col--;
+    s = String.fromCharCode(65 + col % 26) + s;
+    col = Math.floor(col / 26);
+  }
+  return s;
+}
+
+// ===== 1. SHEET DỮ LIỆU GỐC =====
+function writeRawData(ss, rows) {
+  var sheet = getOrCreate(ss, "📋 Dữ liệu");
+  clearSheet(sheet);
+  header(sheet, ["STT","Ngày","Loại","Nội dung","Số lượng (kg)","Đơn giá","Doanh thu","Chi phí","Lợi nhuận","Cập nhật"]);
+  var now = new Date().toLocaleString("vi-VN");
+  rows.forEach(function(r, i) {
+    sheet.appendRow([i+1, r.ngay, r.loai||"Bán", r.noidung,
+      r.soluong, r.dongia, r.doanhthu, r.chiphi, r.doanhthu - r.chiphi, now]);
+  });
+  fmtMoney(sheet, 2, [6,7,8,9]);
+  fmtKg(sheet, 2, [5]);
+  altRows(sheet, 2, 10);
+  autoWidth(sheet, 10);
+}
+
+// ===== 2. SHEET THU - CHI - TỒN TIỀN =====
+function writeThuChi(ss, rows) {
+  var sheet = getOrCreate(ss, "💰 Thu - Chi");
+  clearSheet(sheet);
+  header(sheet, ["Ngày","Nội dung","Loại","Thu (Bán)","Chi phí","Tồn tiền tích lũy"], "#1D6B4E");
+
+  var sorted = rows.slice().sort(function(a,b){ return a.ngay > b.ngay ? 1 : -1; });
+  var cumul = 0;
+  sorted.forEach(function(r) {
+    var thu = r.loai === "Bán" ? r.doanhthu : 0;
+    var chi = r.chiphi || 0;
+    cumul += thu - chi;
+    sheet.appendRow([r.ngay, r.noidung, r.loai||"Bán", thu, chi, cumul]);
+  });
+
+  // Dòng tổng
+  var last = sheet.getLastRow();
+  if (last >= 2) {
+    sheet.appendRow([
+      "TỔNG CỘNG", "", "",
+      "=SUM(D2:D"+last+")",
+      "=SUM(E2:E"+last+")",
+      "=D"+(last+1)+"-E"+(last+1)
+    ]);
+    var totalR = sheet.getRange(last+1, 1, 1, 6);
+    totalR.setBackground("#085041"); totalR.setFontColor("white"); totalR.setFontWeight("bold");
+  }
+  fmtMoney(sheet, 2, [4,5,6]);
+  altRows(sheet, 2, 6, "#EFF8F4");
+  autoWidth(sheet, 6);
+
+  // Tô màu cột Thu xanh, Chi đỏ
+  if (sheet.getLastRow() >= 2) {
+    sheet.getRange(2, 4, sheet.getLastRow()-2, 1).setFontColor("#085041");
+    sheet.getRange(2, 5, sheet.getLastRow()-2, 1).setFontColor("#A32D2D");
+  }
+}
+
+// ===== 3. SHEET TỒN KHO HÀNG HOÁ =====
+function writeTonKho(ss, rows) {
+  var sheet = getOrCreate(ss, "📦 Tồn kho");
+  clearSheet(sheet);
+  header(sheet, ["Mặt hàng","Tổng nhập (kg)","Tổng xuất (kg)","Tồn kho (kg)","Tổng tiền Mua","Tổng tiền Bán","Lợi nhuận"], "#185FA5");
+
+  var hang = {};
+  rows.forEach(function(r) {
+    var ten = r.noidung.trim();
+    if (!hang[ten]) hang[ten] = {nhap:0, xuat:0, muaTien:0, banTien:0};
+    if (r.loai === "Mua") {
+      hang[ten].nhap += r.soluong || 0;
+      hang[ten].muaTien += r.chiphi || 0;
+    } else {
+      hang[ten].xuat += r.soluong || 0;
+      hang[ten].banTien += r.doanhthu || 0;
+    }
+  });
+
+  Object.keys(hang).sort().forEach(function(ten) {
+    var h = hang[ten];
+    var ton = h.nhap - h.xuat;
+    var ln = h.banTien - h.muaTien;
+    sheet.appendRow([ten, h.nhap, h.xuat, ton, h.muaTien, h.banTien, ln]);
+  });
+
+  // Dòng tổng
+  var last = sheet.getLastRow();
+  if (last >= 2) {
+    sheet.appendRow([
+      "TỔNG CỘNG",
+      "=SUM(B2:B"+last+")","=SUM(C2:C"+last+")","=SUM(D2:D"+last+")",
+      "=SUM(E2:E"+last+")","=SUM(F2:F"+last+")","=SUM(G2:G"+last+")"
+    ]);
+    var totalR = sheet.getRange(last+1, 1, 1, 7);
+    totalR.setBackground("#085041"); totalR.setFontColor("white"); totalR.setFontWeight("bold");
+  }
+  fmtKg(sheet, 2, [2,3,4]);
+  fmtMoney(sheet, 2, [5,6,7]);
+  altRows(sheet, 2, 7, "#EBF4FF");
+
+  // Tô màu tồn âm = đỏ
+  var lastData = sheet.getLastRow() - 1;
+  if (lastData >= 2) {
+    for (var i = 2; i <= lastData; i++) {
+      var ton = sheet.getRange(i, 4).getValue();
+      if (ton < 0) sheet.getRange(i, 4).setFontColor("#A32D2D").setFontWeight("bold");
+      else if (ton === 0) sheet.getRange(i, 4).setFontColor("#888780");
+      else sheet.getRange(i, 4).setFontColor("#085041").setFontWeight("bold");
+    }
+  }
+  autoWidth(sheet, 7);
+}
+
+// ===== 4. TỔNG HỢP THEO THÁNG =====
+function writeTongHopThang(ss, rows) {
+  var sheet = getOrCreate(ss, "📅 Theo tháng");
+  clearSheet(sheet);
+  header(sheet, ["Tháng","Thu (Bán)","Chi phí","Lợi nhuận","Số GD"], "#854F0B");
+
+  var thang = {};
+  rows.forEach(function(r) {
+    var key = r.ngay ? r.ngay.substring(0,7) : "?";
+    if (!thang[key]) thang[key] = {thu:0, chi:0, count:0};
+    if (r.loai === "Bán") thang[key].thu += r.doanhthu || 0;
+    thang[key].chi += r.chiphi || 0;
+    thang[key].count++;
+  });
+
+  Object.keys(thang).sort().forEach(function(k) {
+    var t = thang[k];
+    sheet.appendRow([k, t.thu, t.chi, t.thu - t.chi, t.count]);
+  });
+
+  var last = sheet.getLastRow();
+  if (last >= 2) {
+    sheet.appendRow(["TỔNG","=SUM(B2:B"+last+")","=SUM(C2:C"+last+")","=SUM(D2:D"+last+")","=SUM(E2:E"+last+")"]);
+    var totalR = sheet.getRange(last+1,1,1,5);
+    totalR.setBackground("#085041"); totalR.setFontColor("white"); totalR.setFontWeight("bold");
+  }
+  fmtMoney(sheet, 2, [2,3,4]);
+  altRows(sheet, 2, 5, "#FEF5E7");
+  autoWidth(sheet, 5);
+}
+
+// ===== 5. TỔNG HỢP THEO NGÀY =====
+function writeTongHopNgay(ss, rows) {
+  var sheet = getOrCreate(ss, "📆 Theo ngày");
+  clearSheet(sheet);
+  header(sheet, ["Ngày","Thu (Bán)","Chi phí","Lợi nhuận","Số GD"], "#3C3489");
+
+  var ngay = {};
+  rows.forEach(function(r) {
+    var key = r.ngay || "?";
+    if (!ngay[key]) ngay[key] = {thu:0, chi:0, count:0};
+    if (r.loai === "Bán") ngay[key].thu += r.doanhthu || 0;
+    ngay[key].chi += r.chiphi || 0;
+    ngay[key].count++;
+  });
+
+  Object.keys(ngay).sort().forEach(function(k) {
+    var d = ngay[k];
+    sheet.appendRow([k, d.thu, d.chi, d.thu - d.chi, d.count]);
+  });
+
+  var last = sheet.getLastRow();
+  if (last >= 2) {
+    sheet.appendRow(["TỔNG","=SUM(B2:B"+last+")","=SUM(C2:C"+last+")","=SUM(D2:D"+last+")","=SUM(E2:E"+last+")"]);
+    var totalR = sheet.getRange(last+1,1,1,5);
+    totalR.setBackground("#085041"); totalR.setFontColor("white"); totalR.setFontWeight("bold");
+  }
+  fmtMoney(sheet, 2, [2,3,4]);
+  altRows(sheet, 2, 5, "#EEEDFE");
+  autoWidth(sheet, 5);
+}`;
+
+let records = [];
+
+let currentLoai = 'Bán';
+
+function setLoai(loai) {
+  currentLoai = loai;
+  document.getElementById('btn-ban').className = 'loai-btn' + (loai === 'Bán' ? ' active-ban' : '');
+  document.getElementById('btn-mua').className = 'loai-btn' + (loai === 'Mua' ? ' active-mua' : '');
+}
+
+function init() {
+  // Ngày hôm nay
+  const today = new Date();
+  document.getElementById('header-date').textContent = today.toLocaleDateString('vi-VN', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  document.getElementById('f-ngay').value = today.toISOString().split('T')[0];
+
+  // Load dữ liệu
+  try { records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { records = []; }
+
+  // Load GS URL
+  const gsUrl = localStorage.getItem(GSURL_KEY) || '';
+  document.getElementById('gs-url').value = gsUrl;
+  if (gsUrl) updateGSStatus(true);
+
+  // Apps script code
+  document.getElementById('apps-script-code').value = APPS_SCRIPT;
+
+  renderList();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'danh-sach') renderList();
+}
+
+function fmt(n) {
+  return Number(n||0).toLocaleString('vi-VN') + ' ₫';
+}
+
+function calcDT() {
+  if (document.getElementById('dt-override').checked) return;
+  const sl = parseFloat(document.getElementById('f-soluong').value) || 0;
+  const dg = parseFloat(document.getElementById('f-dongia').value) || 0;
+  const dt = sl * dg;
+  document.getElementById('dt-value').textContent = dt.toLocaleString('vi-VN') + ' ₫';
+}
+
+function toggleDTOverride() {
+  const checked = document.getElementById('dt-override').checked;
+  document.getElementById('dt-display').style.display = checked ? 'none' : 'block';
+  document.getElementById('f-doanhthu').style.display = checked ? 'block' : 'none';
+}
+
+function saveRecord() {
+  const ngay = document.getElementById('f-ngay').value;
+  const noidung = document.getElementById('f-noidung').value.trim();
+  const soluong = parseFloat(document.getElementById('f-soluong').value) || 0;
+  const dongia = parseFloat(document.getElementById('f-dongia').value) || 0;
+  const chiphi = parseFloat(document.getElementById('f-chiphi').value) || 0;
+
+  if (!ngay) { showToast('⚠️ Vui lòng chọn ngày'); return; }
+  if (!noidung) { showToast('⚠️ Vui lòng nhập nội dung'); return; }
+
+  let doanhthu;
+  if (document.getElementById('dt-override').checked) {
+    doanhthu = parseFloat(document.getElementById('f-doanhthu').value) || 0;
+  } else {
+    doanhthu = soluong * dongia;
+  }
+
+  const record = {
+    id: Date.now(),
+    loai: currentLoai,
+    ngay, noidung, soluong, dongia, doanhthu, chiphi,
+    loinhuan: doanhthu - chiphi
+  };
+  records.push(record);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+
+  // Reset form
+  document.getElementById('f-noidung').value = '';
+  document.getElementById('f-soluong').value = '';
+  document.getElementById('f-dongia').value = '';
+  document.getElementById('f-chiphi').value = '';
+  document.getElementById('f-doanhthu').value = '';
+  document.getElementById('dt-value').textContent = '0 ₫';
+  document.getElementById('dt-override').checked = false;
+  toggleDTOverride();
+
+  showToast('✅ Đã lưu giao dịch!');
+}
+
+function deleteRecord(id) {
+  if (!confirm('Xóa giao dịch này?')) return;
+  records = records.filter(r => r.id !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  renderList();
+}
+
+function renderList() {
+  const c = document.getElementById('list-container');
+  const sumDT = records.reduce((s,r)=>s+r.doanhthu,0);
+  const sumCP = records.reduce((s,r)=>s+r.chiphi,0);
+  const sumLN = sumDT - sumCP;
+
+  document.getElementById('sum-dt').textContent = fmt(sumDT);
+  document.getElementById('sum-cp').textContent = fmt(sumCP);
+  document.getElementById('sum-ln').textContent = fmt(sumLN);
+  document.getElementById('sum-count').textContent = records.length;
+
+  if (records.length === 0) {
+    c.innerHTML = '<div class="empty"><div>📭</div>Chưa có giao dịch nào.<br>Nhấn tab "Nhập liệu" để bắt đầu.</div>';
+    return;
+  }
+
+  const sorted = [...records].sort((a,b) => new Date(b.ngay)-new Date(a.ngay));
+  c.innerHTML = sorted.map((r, i) => {
+    const ngayFmt = new Date(r.ngay).toLocaleDateString('vi-VN');
+    const ln = r.doanhthu - r.chiphi;
+    const loaiTag = r.loai === 'Mua'
+      ? `<span class="tag" style="background:#E6F1FB;color:#0C447C;">🔵 Mua</span>`
+      : `<span class="tag" style="background:var(--green-light);color:var(--green-dark);">🟢 Bán</span>`;
+    return `<div class="list-item">
+      <button class="del-btn" onclick="deleteRecord(${r.id})">Xóa</button>
+      <div class="row-top">
+        <span class="stt">STT ${records.length - i}</span>
+        <span class="date-badge">${ngayFmt}</span>
+      </div>
+      <div class="noidung">${loaiTag} ${r.noidung}</div>
+      <div class="details">
+        <span class="tag tag-sl">📦 ${r.soluong} kg</span>
+        <span class="tag tag-dt">💰 ${r.doanhthu.toLocaleString('vi-VN')}đ</span>
+        <span class="tag tag-cp">💸 CP: ${r.chiphi.toLocaleString('vi-VN')}đ</span>
+        <span class="tag tag-loi">📈 LN: ${ln.toLocaleString('vi-VN')}đ</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveGSUrl() {
+  const url = document.getElementById('gs-url').value.trim();
+  localStorage.setItem(GSURL_KEY, url);
+  if (url) updateGSStatus(true);
+  else updateGSStatus(false);
+}
+
+function updateGSStatus(ok) {
+  const box = document.getElementById('gs-status-box');
+  const txt = document.getElementById('gs-status-text');
+  if (ok) {
+    box.className = 'gs-status ok';
+    txt.textContent = 'Đã cấu hình URL — sẵn sàng đồng bộ';
+  } else {
+    box.className = 'gs-status warn';
+    txt.textContent = 'Chưa cấu hình URL Google Apps Script';
+  }
+}
+
+async function testConnection() {
+  const url = document.getElementById('gs-url').value.trim();
+  if (!url) { showToast('⚠️ Chưa nhập URL'); return; }
+  document.getElementById('sync-result').textContent = '🔄 Đang kiểm tra...';
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.status === 'ok') {
+      document.getElementById('sync-result').textContent = '✅ Kết nối thành công!';
+      const box = document.getElementById('gs-status-box');
+      box.className = 'gs-status ok';
+      document.getElementById('gs-status-text').textContent = 'Kết nối OK — sẵn sàng đồng bộ';
+    }
+  } catch(e) {
+    document.getElementById('sync-result').textContent = '❌ Không kết nối được. Kiểm tra lại URL.';
+  }
+}
+
+async function syncToGSheet() {
+  const url = document.getElementById('gs-url').value.trim();
+  if (!url) { showToast('⚠️ Chưa nhập URL Apps Script'); return; }
+  if (records.length === 0) { showToast('⚠️ Chưa có dữ liệu để đồng bộ'); return; }
+
+  document.getElementById('sync-result').textContent = '🔄 Đang đồng bộ...';
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({ rows: records }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('sync-result').textContent = `✅ Đồng bộ thành công ${data.synced} giao dịch lên Google Sheet!`;
+      showToast('☁️ Đồng bộ thành công!');
+    }
+  } catch(e) {
+    document.getElementById('sync-result').textContent = '❌ Lỗi đồng bộ: ' + e.message;
+  }
+}
+
+function copyScript() {
+  const code = document.getElementById('apps-script-code').value;
+  navigator.clipboard.writeText(code).then(() => showToast('✅ Đã sao chép code!')).catch(() => {
+    document.getElementById('apps-script-code').select();
+    document.execCommand('copy');
+    showToast('✅ Đã sao chép!');
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>
